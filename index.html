@@ -17,9 +17,9 @@
     }
     .left-panel {
       width: 25%;
-      background-color: #fff;
-      border-right: 1px solid #ddd;
-      padding: 10px;
+      background-color: #007bff; /* Blue background */
+      color: white;
+      padding: 20px;
       overflow-y: auto;
     }
     .right-panel {
@@ -44,6 +44,12 @@
     .note.active {
       background-color: #e3f2fd;
     }
+    .note-title {
+      font-weight: bold;
+      font-size: 24px;
+      padding: 10px 0;
+      border-bottom: 2px solid #ddd;
+    }
     textarea {
       width: 100%;
       height: 100%;
@@ -55,6 +61,7 @@
       font-size: 20px;
       line-height: 1.5;
       padding: 10px;
+      box-sizing: border-box;
     }
     .line {
       height: 1px;
@@ -67,13 +74,28 @@
       margin-top: 20px;
     }
     .top-buttons {
-      margin-bottom: 10px;
+      margin-bottom: 20px;
     }
-    .note-title {
-      font-weight: bold;
+    .add-new-note-btn {
+      font-size: 18px;
+    }
+    .note-list {
+      margin-top: 20px;
+    }
+    .left-panel h4 {
       font-size: 24px;
-      padding: 10px 0;
-      border-bottom: 2px solid #ddd;
+      margin-bottom: 20px;
+    }
+    .note-list button {
+      background: transparent;
+      color: white;
+      font-size: 16px;
+      padding: 5px 10px;
+      border: none;
+      cursor: pointer;
+    }
+    .note-list button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
     }
   </style>
 </head>
@@ -82,21 +104,21 @@
     <!-- Left Panel -->
     <div class="left-panel">
       <div class="top-buttons">
-        <button id="addNewNote" class="btn btn-success">Add New Note</button>
+        <button id="addNewNote" class="btn btn-light add-new-note-btn">Add New Note</button>
       </div>
       <h4>All Notes</h4>
-      <div id="notesList"></div>
+      <div id="notesList" class="note-list"></div>
       <div class="bottom-buttons">
         <button id="deleteNote" class="btn btn-danger">Delete</button>
         <button id="deleteAllNotes" class="btn btn-danger">Delete All</button>
       </div>
     </div>
+
     <!-- Right Panel -->
     <div class="right-panel">
       <h4 id="noteTitle" class="note-title">New Note</h4>
       <textarea id="noteContent" placeholder="Write your note here..."></textarea>
       <div class="line"></div>
-      <button id="saveNote" class="btn btn-primary mt-3">Save Note</button>
     </div>
   </div>
 
@@ -108,7 +130,6 @@
     const notesList = document.getElementById("notesList");
     const noteContent = document.getElementById("noteContent");
     const noteTitle = document.getElementById("noteTitle");
-    const saveNoteButton = document.getElementById("saveNote");
 
     const addNewNoteButton = document.getElementById("addNewNote");
     const deleteNoteButton = document.getElementById("deleteNote");
@@ -135,19 +156,14 @@
       document.getElementsByClassName('note')[index].classList.add('active');
     }
 
-    // Function to save the note (create or update)
-    function saveNote() {
-      if (activeNoteIndex !== null) {
-        notes[activeNoteIndex].content = noteContent.value;
-        notes[activeNoteIndex].title = noteTitle.innerText;
-      } else {
-        const newNote = {
-          title: noteTitle.innerText || `New Note ${notes.length + 1}`,
-          content: noteContent.value
-        };
-        notes.push(newNote);
-        activeNoteIndex = notes.length - 1;
-      }
+    // Function to add a new note or update the existing note
+    function addNewNote() {
+      const newNote = {
+        title: noteTitle.innerText || `New Note ${notes.length + 1}`,
+        content: noteContent.value
+      };
+      notes.push(newNote);
+      activeNoteIndex = notes.length - 1;
       renderNotes();
       loadNote(activeNoteIndex);
       autoSave();
@@ -196,33 +212,14 @@
       noteTitle.innerText = "New Note";
       noteContent.value = '';
       activeNoteIndex = null;
+      addNewNote(); // Automatically saves the new note
     });
-
-    // Event listener for saving the note
-    saveNoteButton.addEventListener('click', saveNote);
 
     // Event listener for deleting the selected note
     deleteNoteButton.addEventListener("click", deleteNote);
 
     // Event listener for deleting all notes
     deleteAllButton.addEventListener("click", deleteAllNotes);
-
-    // Keyboard shortcuts for various actions
-    document.addEventListener("keydown", (e) => {
-      if (e.ctrlKey) {
-        if (e.key === 'n') {
-          addNewNoteButton.click();
-        } else if (e.key === 's') {
-          saveNoteButton.click();
-        } else if (e.key === 'a') {
-          noteContent.select();
-        } else if (e.key === 'c') {
-          document.execCommand('copy');
-        } else if (e.key === 'v') {
-          document.execCommand('paste');
-        }
-      }
-    });
 
     renderNotes();
   </script>
