@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,13 +12,16 @@
       font-size: 20px;
       background-color: #f4f7f6;
       margin: 0;
+      padding: 0;
     }
+
     .container {
       display: flex;
-      height: 100vh;
-      width: 90%; /* Occupy 90% horizontally */
+      width: 90%; /* Page occupies 90% horizontally */
       margin: 0 auto;
+      height: 100vh;
     }
+
     .left-panel {
       width: 30%;
       background-color: #ffffff;
@@ -25,15 +29,18 @@
       padding: 20px;
       overflow-y: auto;
     }
+
     .right-panel {
       width: 70%;
-      background-color: #ffffff;
       padding: 20px;
+      background-color: #ffffff;
     }
+
     .note-title {
       font-size: 24px;
       font-weight: bold;
     }
+
     .note {
       margin-bottom: 20px;
       padding: 10px;
@@ -42,9 +49,11 @@
       cursor: pointer;
       font-weight: normal;
     }
+
     .note:hover {
       background-color: #d9eaf7;
     }
+
     .button {
       background-color: #007bff;
       color: white;
@@ -56,9 +65,11 @@
       margin-bottom: 15px;
       width: 100%;
     }
+
     .button:disabled {
       background-color: #bbb;
     }
+
     .note-taking-area {
       background-color: #ffffff;
       border: 1px solid #ccc;
@@ -71,12 +82,15 @@
       white-space: pre-wrap;
       word-wrap: break-word;
       overflow-y: auto;
+      border-top: 5px solid #007bff;
     }
+
     .button-container {
       display: flex;
       justify-content: space-between;
       margin-top: 15px;
     }
+
     .button-container button {
       background-color: #007bff;
       color: white;
@@ -85,9 +99,11 @@
       border: none;
       border-radius: 5px;
     }
+
     .search-box {
       margin-bottom: 15px;
     }
+
     .search-box input {
       width: 100%;
       padding: 10px;
@@ -95,6 +111,7 @@
       border-radius: 5px;
       border: 1px solid #ddd;
     }
+
     .top-left-panel {
       background-color: #007bff;
       color: white;
@@ -105,185 +122,188 @@
       border-radius: 10px;
       margin-bottom: 10px;
     }
+
     .note-list-container {
       margin-bottom: 20px;
     }
   </style>
 </head>
+
 <body>
 
-<div class="container">
-  <!-- Left Panel -->
-  <div class="left-panel">
-    <div class="top-left-panel">
-      Notes
+  <div class="container">
+    <!-- Left Panel -->
+    <div class="left-panel">
+      <div class="top-left-panel">
+        Notes
+      </div>
+      <div class="search-box">
+        <input type="text" id="search" placeholder="Search Notes..." oninput="filterNotes()" />
+      </div>
+      <div class="note-list-container" id="noteList"></div>
+      <div class="button-container">
+        <button onclick="createNewNote()" id="newNoteBtn" class="button">Create New Note (Ctrl + N)</button>
+      </div>
+      <div class="button-container">
+        <button onclick="undoAction()" id="undoBtn" class="button">Undo (Ctrl + Z)</button>
+        <button onclick="redoAction()" id="redoBtn" class="button">Redo (Ctrl + Y)</button>
+        <button onclick="deleteNote()" id="deleteNoteBtn" class="button">Delete Note</button>
+        <button onclick="clearAllNotes()" id="clearAllBtn" class="button">Delete All Notes</button>
+      </div>
     </div>
-    <div class="search-box">
-      <input type="text" id="search" placeholder="Search Notes..." oninput="filterNotes()" />
-    </div>
-    <div class="note-list-container" id="noteList"></div>
-    <div class="button-container">
-      <button onclick="createNewNote()" id="newNoteBtn" class="button">Create New Note</button>
-    </div>
-    <div class="button-container">
-      <button onclick="undoAction()" id="undoBtn" class="button">Undo</button>
-      <button onclick="redoAction()" id="redoBtn" class="button">Redo</button>
-      <button onclick="deleteNote()" id="deleteNoteBtn" class="button">Delete Note</button>
-      <button onclick="clearAllNotes()" id="clearAllBtn" class="button">Delete All Notes</button>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+      <div class="note-taking-area" id="noteArea" contenteditable="true"></div>
     </div>
   </div>
 
-  <!-- Right Panel -->
-  <div class="right-panel">
-    <div class="note-taking-area" id="noteArea" contenteditable="true"></div>
-  </div>
-</div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let notes = JSON.parse(localStorage.getItem('notes')) || [];
+    let currentNoteIndex = -1;
+    let undoStack = [];
+    let redoStack = [];
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  let notes = JSON.parse(localStorage.getItem('notes')) || [];
-  let currentNoteIndex = -1;
-  let undoStack = [];
-  let redoStack = [];
-
-  // Create a new note
-  function createNewNote() {
-    const newNote = { title: 'Untitled', content: '' };
-    notes.push(newNote);
-    currentNoteIndex = notes.length - 1;
-    saveNotes();
-    displayNotes();
-    displayNoteContent(currentNoteIndex);
-  }
-
-  // Display all notes in the left panel
-  function displayNotes() {
-    const noteList = document.getElementById('noteList');
-    noteList.innerHTML = '';
-    notes.forEach((note, index) => {
-      const noteItem = document.createElement('div');
-      noteItem.classList.add('note');
-      noteItem.textContent = note.title || 'Untitled';
-      noteItem.onclick = () => displayNoteContent(index);
-      noteList.appendChild(noteItem);
-    });
-  }
-
-  // Display content of the selected note
-  function displayNoteContent(index) {
-    currentNoteIndex = index;
-    const noteArea = document.getElementById('noteArea');
-    noteArea.innerHTML = notes[index].content;
-    noteArea.focus();
-    document.getElementById('deleteNoteBtn').disabled = false;
-  }
-
-  // Save the notes to local storage
-  function saveNotes() {
-    localStorage.setItem('notes', JSON.stringify(notes));
-    displayNotes();
-  }
-
-  // Undo action
-  function undoAction() {
-    if (undoStack.length > 0) {
-      redoStack.push({ ...notes[currentNoteIndex] });
-      const lastState = undoStack.pop();
-      notes[currentNoteIndex] = lastState;
-      document.getElementById('noteArea').innerHTML = lastState.content;
-      updateUndoRedoButtons();
-    }
-  }
-
-  // Redo action
-  function redoAction() {
-    if (redoStack.length > 0) {
-      undoStack.push({ ...notes[currentNoteIndex] });
-      const nextState = redoStack.pop();
-      notes[currentNoteIndex] = nextState;
-      document.getElementById('noteArea').innerHTML = nextState.content;
-      updateUndoRedoButtons();
-    }
-  }
-
-  // Update undo/redo buttons based on stack size
-  function updateUndoRedoButtons() {
-    document.getElementById('undoBtn').disabled = undoStack.length === 0;
-    document.getElementById('redoBtn').disabled = redoStack.length === 0;
-  }
-
-  // Save the current note on input
-  document.getElementById('noteArea').addEventListener('input', function() {
-    if (currentNoteIndex === -1) return;
-
-    undoStack.push({ ...notes[currentNoteIndex] });
-    if (undoStack.length > 6) undoStack.shift(); // Limit undo stack to 6 actions
-
-    notes[currentNoteIndex].content = document.getElementById('noteArea').innerHTML;
-    redoStack = [];
-    saveNotes();
-    updateUndoRedoButtons();
-  });
-
-  // Delete the current note
-  function deleteNote() {
-    if (confirm('Are you sure you want to delete this note?')) {
-      notes.splice(currentNoteIndex, 1);
-      currentNoteIndex = -1;
-      saveNotes();
-      document.getElementById('noteArea').innerHTML = '';
-      displayNotes();
-      document.getElementById('deleteNoteBtn').disabled = true;
-    }
-  }
-
-  // Delete all notes
-  function clearAllNotes() {
-    if (confirm('Are you sure you want to delete all notes?')) {
-      notes = [];
+    // Create a new note
+    function createNewNote() {
+      const newNote = { title: 'Untitled', content: '' };
+      notes.push(newNote);
+      currentNoteIndex = notes.length - 1;
       saveNotes();
       displayNotes();
-      document.getElementById('noteArea').innerHTML = '';
-      document.getElementById('deleteNoteBtn').disabled = true;
+      displayNoteContent(currentNoteIndex);
     }
-  }
 
-  // Filter notes based on search input
-  function filterNotes() {
-    const searchText = document.getElementById('search').value.toLowerCase();
-    const filteredNotes = notes.filter(note => note.title.toLowerCase().includes(searchText));
-    const noteList = document.getElementById('noteList');
-    noteList.innerHTML = '';
-    filteredNotes.forEach((note, index) => {
-      const noteItem = document.createElement('div');
-      noteItem.classList.add('note');
-      noteItem.textContent = note.title || 'Untitled';
-      noteItem.onclick = () => displayNoteContent(index);
-      noteList.appendChild(noteItem);
-    });
-  }
+    // Display all notes in the left panel
+    function displayNotes() {
+      const noteList = document.getElementById('noteList');
+      noteList.innerHTML = '';
+      notes.forEach((note, index) => {
+        const noteItem = document.createElement('div');
+        noteItem.classList.add('note');
+        noteItem.textContent = note.title || 'Untitled';
+        noteItem.onclick = () => displayNoteContent(index);
+        noteList.appendChild(noteItem);
+      });
+    }
 
-  // Handle keyboard shortcuts
-  document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey || e.metaKey) {
-      if (e.key === 'n') { // Create New Note (Ctrl/Cmd + N)
-        createNewNote();
-      } else if (e.key === 'z') { // Undo (Ctrl/Cmd + Z)
-        e.preventDefault();
-        undoAction();
-      } else if (e.key === 'y') { // Redo (Ctrl/Cmd + Y)
-        e.preventDefault();
-        redoAction();
-      } else if (e.key === 'a') { // Select All (Ctrl/Cmd + A)
-        document.getElementById('noteArea').select();
+    // Display content of the selected note
+    function displayNoteContent(index) {
+      currentNoteIndex = index;
+      const noteArea = document.getElementById('noteArea');
+      noteArea.innerHTML = notes[index].content;
+      noteArea.focus();
+      document.getElementById('deleteNoteBtn').disabled = false;
+    }
+
+    // Save the notes to local storage
+    function saveNotes() {
+      localStorage.setItem('notes', JSON.stringify(notes));
+      displayNotes();
+    }
+
+    // Undo action
+    function undoAction() {
+      if (undoStack.length > 0) {
+        redoStack.push({ ...notes[currentNoteIndex] });
+        const lastState = undoStack.pop();
+        notes[currentNoteIndex] = lastState;
+        document.getElementById('noteArea').innerHTML = lastState.content;
+        updateUndoRedoButtons();
       }
     }
-  });
 
-  // Initialize the app
-  displayNotes();
-  updateUndoRedoButtons();
-</script>
+    // Redo action
+    function redoAction() {
+      if (redoStack.length > 0) {
+        undoStack.push({ ...notes[currentNoteIndex] });
+        const nextState = redoStack.pop();
+        notes[currentNoteIndex] = nextState;
+        document.getElementById('noteArea').innerHTML = nextState.content;
+        updateUndoRedoButtons();
+      }
+    }
+
+    // Update undo/redo buttons based on stack size
+    function updateUndoRedoButtons() {
+      document.getElementById('undoBtn').disabled = undoStack.length === 0;
+      document.getElementById('redoBtn').disabled = redoStack.length === 0;
+    }
+
+    // Save the current note on input
+    document.getElementById('noteArea').addEventListener('input', function () {
+      if (currentNoteIndex === -1) return;
+
+      undoStack.push({ ...notes[currentNoteIndex] });
+      if (undoStack.length > 6) undoStack.shift(); // Limit undo stack to 6 actions
+
+      notes[currentNoteIndex].content = document.getElementById('noteArea').innerHTML;
+      redoStack = [];
+      saveNotes();
+      updateUndoRedoButtons();
+    });
+
+    // Delete the current note
+    function deleteNote() {
+      if (confirm('Are you sure you want to delete this note?')) {
+        notes.splice(currentNoteIndex, 1);
+        currentNoteIndex = -1;
+        saveNotes();
+        document.getElementById('noteArea').innerHTML = '';
+        displayNotes();
+        document.getElementById('deleteNoteBtn').disabled = true;
+      }
+    }
+
+    // Delete all notes
+    function clearAllNotes() {
+      if (confirm('Are you sure you want to delete all notes?')) {
+        notes = [];
+        saveNotes();
+        displayNotes();
+        document.getElementById('noteArea').innerHTML = '';
+        document.getElementById('deleteNoteBtn').disabled = true;
+      }
+    }
+
+    // Filter notes based on search input
+    function filterNotes() {
+      const searchText = document.getElementById('search').value.toLowerCase();
+      const filteredNotes = notes.filter(note => note.title.toLowerCase().includes(searchText));
+      const noteList = document.getElementById('noteList');
+      noteList.innerHTML = '';
+      filteredNotes.forEach((note, index) => {
+        const noteItem = document.createElement('div');
+        noteItem.classList.add('note');
+        noteItem.textContent = note.title || 'Untitled';
+        noteItem.onclick = () => displayNoteContent(index);
+        noteList.appendChild(noteItem);
+      });
+    }
+
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', function (e) {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'n') { // Create New Note (Ctrl/Cmd + N)
+          createNewNote();
+        } else if (e.key === 'z') { // Undo (Ctrl/Cmd + Z)
+          e.preventDefault();
+          undoAction();
+        } else if (e.key === 'y') { // Redo (Ctrl/Cmd + Y)
+          e.preventDefault();
+          redoAction();
+        } else if (e.key === 'a') { // Select All (Ctrl/Cmd + A)
+          document.getElementById('noteArea').select();
+        }
+      }
+    });
+
+    // Initialize the app
+    displayNotes();
+    updateUndoRedoButtons();
+  </script>
 
 </body>
+
 </html>
