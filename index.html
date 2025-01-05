@@ -54,6 +54,7 @@
       font-family: Arial, sans-serif;
       font-size: 20px;
       line-height: 1.5;
+      padding: 10px;
     }
     .line {
       height: 1px;
@@ -65,27 +66,37 @@
       justify-content: space-between;
       margin-top: 20px;
     }
+    .top-buttons {
+      margin-bottom: 10px;
+    }
+    .note-title {
+      font-weight: bold;
+      font-size: 24px;
+      padding: 10px 0;
+      border-bottom: 2px solid #ddd;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <!-- Left Panel -->
     <div class="left-panel">
+      <div class="top-buttons">
+        <button id="addNewNote" class="btn btn-success">Add New Note</button>
+      </div>
       <h4>All Notes</h4>
       <div id="notesList"></div>
-    </div>
-    <!-- Right Panel -->
-    <div class="right-panel">
-      <h4 id="noteTitle">New Note</h4>
-      <textarea id="noteContent" placeholder="Write your note here..."></textarea>
-      <div class="line"></div>
-      <button id="saveNote" class="btn btn-primary mt-3">Save Note</button>
-      
       <div class="bottom-buttons">
-        <button id="addNewNote" class="btn btn-success">Add New Note</button>
         <button id="deleteNote" class="btn btn-danger">Delete</button>
         <button id="deleteAllNotes" class="btn btn-danger">Delete All</button>
       </div>
+    </div>
+    <!-- Right Panel -->
+    <div class="right-panel">
+      <h4 id="noteTitle" class="note-title">New Note</h4>
+      <textarea id="noteContent" placeholder="Write your note here..."></textarea>
+      <div class="line"></div>
+      <button id="saveNote" class="btn btn-primary mt-3">Save Note</button>
     </div>
   </div>
 
@@ -93,8 +104,6 @@
   <script>
     let notes = [];
     let activeNoteIndex = null;
-    let undoStack = [];
-    let redoStack = [];
 
     const notesList = document.getElementById("notesList");
     const noteContent = document.getElementById("noteContent");
@@ -105,7 +114,7 @@
     const deleteNoteButton = document.getElementById("deleteNote");
     const deleteAllButton = document.getElementById("deleteAllNotes");
 
-    // Function to render all notes
+    // Function to render all notes in the left panel
     function renderNotes() {
       notesList.innerHTML = '';
       notes.forEach((note, index) => {
@@ -117,7 +126,7 @@
       });
     }
 
-    // Function to load the selected note
+    // Function to load a specific note into the right panel
     function loadNote(index) {
       activeNoteIndex = index;
       noteTitle.innerText = notes[index].title || `Untitled Note ${index + 1}`;
@@ -126,35 +135,22 @@
       document.getElementsByClassName('note')[index].classList.add('active');
     }
 
-    // Function to create or update a note
+    // Function to save the note (create or update)
     function saveNote() {
       if (activeNoteIndex !== null) {
         notes[activeNoteIndex].content = noteContent.value;
         notes[activeNoteIndex].title = noteTitle.innerText;
       } else {
         const newNote = {
-          title: `New Note ${notes.length + 1}`,
+          title: noteTitle.innerText || `New Note ${notes.length + 1}`,
           content: noteContent.value
         };
         notes.push(newNote);
         activeNoteIndex = notes.length - 1;
       }
-      undoStack.push({ action: 'save', index: activeNoteIndex, note: { ...notes[activeNoteIndex] } });
       renderNotes();
       loadNote(activeNoteIndex);
       autoSave();
-    }
-
-    // Function to delete all notes with a confirmation prompt
-    function deleteAllNotes() {
-      if (confirm("Are you sure you want to delete all notes?")) {
-        notes = [];
-        activeNoteIndex = null;
-        renderNotes();
-        noteContent.value = '';
-        noteTitle.innerText = 'New Note';
-        autoSave();
-      }
     }
 
     // Function to delete the selected note with a confirmation prompt
@@ -169,12 +165,24 @@
       }
     }
 
-    // Auto save functionality
+    // Function to delete all notes with a confirmation prompt
+    function deleteAllNotes() {
+      if (confirm("Are you sure you want to delete all notes?")) {
+        notes = [];
+        activeNoteIndex = null;
+        renderNotes();
+        noteContent.value = '';
+        noteTitle.innerText = 'New Note';
+        autoSave();
+      }
+    }
+
+    // Auto-save functionality to save notes in browser's localStorage
     function autoSave() {
       localStorage.setItem("notes", JSON.stringify(notes));
     }
 
-    // Load notes from local storage on page load
+    // Load notes from local storage when the page loads
     window.onload = function() {
       const savedNotes = JSON.parse(localStorage.getItem("notes"));
       if (savedNotes) {
@@ -193,23 +201,19 @@
     // Event listener for saving the note
     saveNoteButton.addEventListener('click', saveNote);
 
-    // Event listener for delete all notes
-    deleteAllButton.addEventListener("click", deleteAllNotes);
-
-    // Event listener for delete the selected note
+    // Event listener for deleting the selected note
     deleteNoteButton.addEventListener("click", deleteNote);
 
-    // Keyboard shortcuts
+    // Event listener for deleting all notes
+    deleteAllButton.addEventListener("click", deleteAllNotes);
+
+    // Keyboard shortcuts for various actions
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey) {
         if (e.key === 'n') {
           addNewNoteButton.click();
         } else if (e.key === 's') {
           saveNoteButton.click();
-        } else if (e.key === 'z') {
-          undo();
-        } else if (e.key === 'y') {
-          redo();
         } else if (e.key === 'a') {
           noteContent.select();
         } else if (e.key === 'c') {
@@ -219,33 +223,6 @@
         }
       }
     });
-
-    // Undo functionality
-    function undo() {
-      if (undoStack.length > 0) {
-        const lastAction = undoStack.pop();
-        if (lastAction.action === 'save') {
-          const note = notes[lastAction.index];
-          redoStack.push({ action: 'save', index: lastAction.index, note: { ...note } });
-          notes[lastAction.index] = lastAction.note;
-          renderNotes();
-          loadNote(lastAction.index);
-        }
-      }
-    }
-
-    // Redo functionality
-    function redo() {
-      if (redoStack.length > 0) {
-        const lastAction = redoStack.pop();
-        if (lastAction.action === 'save') {
-          notes[lastAction.index] = lastAction.note;
-          undoStack.push({ action: 'save', index: lastAction.index, note: { ...lastAction.note } });
-          renderNotes();
-          loadNote(lastAction.index);
-        }
-      }
-    }
 
     renderNotes();
   </script>
