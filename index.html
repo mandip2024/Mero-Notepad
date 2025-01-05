@@ -8,6 +8,8 @@
   <style>
     body {
       background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      font-size: 20px;
     }
     .container {
       display: flex;
@@ -49,6 +51,19 @@
       border: none;
       background-color: #f9f9f9;
       outline: none;
+      font-family: Arial, sans-serif;
+      font-size: 20px;
+      line-height: 1.5;
+    }
+    .line {
+      height: 1px;
+      background-color: #ddd;
+      margin: 5px 0;
+    }
+    .bottom-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -63,7 +78,14 @@
     <div class="right-panel">
       <h4 id="noteTitle">New Note</h4>
       <textarea id="noteContent" placeholder="Write your note here..."></textarea>
+      <div class="line"></div>
       <button id="saveNote" class="btn btn-primary mt-3">Save Note</button>
+      
+      <div class="bottom-buttons">
+        <button id="addNewNote" class="btn btn-success">Add New Note</button>
+        <button id="deleteNote" class="btn btn-danger">Delete</button>
+        <button id="deleteAllNotes" class="btn btn-danger">Delete All</button>
+      </div>
     </div>
   </div>
 
@@ -78,6 +100,10 @@
     const noteContent = document.getElementById("noteContent");
     const noteTitle = document.getElementById("noteTitle");
     const saveNoteButton = document.getElementById("saveNote");
+
+    const addNewNoteButton = document.getElementById("addNewNote");
+    const deleteNoteButton = document.getElementById("deleteNote");
+    const deleteAllButton = document.getElementById("deleteAllNotes");
 
     // Function to render all notes
     function renderNotes() {
@@ -119,7 +145,7 @@
       autoSave();
     }
 
-    // Function to delete all notes
+    // Function to delete all notes with a confirmation prompt
     function deleteAllNotes() {
       if (confirm("Are you sure you want to delete all notes?")) {
         notes = [];
@@ -127,10 +153,11 @@
         renderNotes();
         noteContent.value = '';
         noteTitle.innerText = 'New Note';
+        autoSave();
       }
     }
 
-    // Function to delete the selected note
+    // Function to delete the selected note with a confirmation prompt
     function deleteNote() {
       if (activeNoteIndex !== null && confirm("Are you sure you want to delete this note?")) {
         notes.splice(activeNoteIndex, 1);
@@ -138,33 +165,7 @@
         renderNotes();
         noteContent.value = '';
         noteTitle.innerText = 'New Note';
-      }
-    }
-
-    // Function to undo the last action
-    function undo() {
-      if (undoStack.length > 0) {
-        const lastAction = undoStack.pop();
-        if (lastAction.action === 'save') {
-          const note = notes[lastAction.index];
-          redoStack.push({ action: 'save', index: lastAction.index, note: { ...note } });
-          notes[lastAction.index] = lastAction.note;
-          renderNotes();
-          loadNote(lastAction.index);
-        }
-      }
-    }
-
-    // Function to redo the last undone action
-    function redo() {
-      if (redoStack.length > 0) {
-        const lastAction = redoStack.pop();
-        if (lastAction.action === 'save') {
-          notes[lastAction.index] = lastAction.note;
-          undoStack.push({ action: 'save', index: lastAction.index, note: { ...lastAction.note } });
-          renderNotes();
-          loadNote(lastAction.index);
-        }
+        autoSave();
       }
     }
 
@@ -182,13 +183,29 @@
       }
     };
 
-    // Event listeners for keyboard shortcuts
+    // Event listener for creating a new note
+    addNewNoteButton.addEventListener("click", () => {
+      noteTitle.innerText = "New Note";
+      noteContent.value = '';
+      activeNoteIndex = null;
+    });
+
+    // Event listener for saving the note
+    saveNoteButton.addEventListener('click', saveNote);
+
+    // Event listener for delete all notes
+    deleteAllButton.addEventListener("click", deleteAllNotes);
+
+    // Event listener for delete the selected note
+    deleteNoteButton.addEventListener("click", deleteNote);
+
+    // Keyboard shortcuts
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey) {
         if (e.key === 'n') {
-          saveNote();
+          addNewNoteButton.click();
         } else if (e.key === 's') {
-          saveNote();
+          saveNoteButton.click();
         } else if (e.key === 'z') {
           undo();
         } else if (e.key === 'y') {
@@ -203,20 +220,32 @@
       }
     });
 
-    saveNoteButton.addEventListener('click', saveNote);
+    // Undo functionality
+    function undo() {
+      if (undoStack.length > 0) {
+        const lastAction = undoStack.pop();
+        if (lastAction.action === 'save') {
+          const note = notes[lastAction.index];
+          redoStack.push({ action: 'save', index: lastAction.index, note: { ...note } });
+          notes[lastAction.index] = lastAction.note;
+          renderNotes();
+          loadNote(lastAction.index);
+        }
+      }
+    }
 
-    // Add CRUD functionality buttons for deleting all and selected note
-    const deleteAllButton = document.createElement("button");
-    deleteAllButton.classList.add("btn", "btn-danger", "mt-3");
-    deleteAllButton.innerText = "Delete All Notes";
-    deleteAllButton.onclick = deleteAllNotes;
-
-    const deleteNoteButton = document.createElement("button");
-    deleteNoteButton.classList.add("btn", "btn-danger", "mt-3");
-    deleteNoteButton.innerText = "Delete Selected Note";
-    deleteNoteButton.onclick = deleteNote;
-
-    document.body.append(deleteAllButton, deleteNoteButton);
+    // Redo functionality
+    function redo() {
+      if (redoStack.length > 0) {
+        const lastAction = redoStack.pop();
+        if (lastAction.action === 'save') {
+          notes[lastAction.index] = lastAction.note;
+          undoStack.push({ action: 'save', index: lastAction.index, note: { ...lastAction.note } });
+          renderNotes();
+          loadNote(lastAction.index);
+        }
+      }
+    }
 
     renderNotes();
   </script>
