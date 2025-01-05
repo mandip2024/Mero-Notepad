@@ -18,62 +18,118 @@
             justify-content: center;
             align-items: center;
             background-color: #fff;
+            overflow: hidden;
         }
+
         .container {
             display: flex;
             width: 1920px;
             height: 1080px;
         }
 
+        /* Sidebar Styling */
         .sidebar {
             width: 30%;
-            background-color: #f0f0f0;
+            background-color: #f4f4f4;
             padding: 20px;
             overflow-y: auto;
+            border-right: 2px solid blue;
         }
 
         .sidebar h2 {
             text-align: center;
+            font-size: 24px;
+            margin-bottom: 30px;
         }
 
         .sidebar button, .sidebar input {
             display: block;
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            padding: 12px;
+            font-size: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
         }
 
+        .sidebar button:hover {
+            background-color: #0056b3;
+        }
+
+        .sidebar input {
+            padding: 12px;
+            font-size: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+        }
+
+        .sidebar input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .sidebar .notepad-list div {
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 18px;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .sidebar .notepad-list div:hover {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* Editor Area Styling */
         .editor {
             width: 70%;
             background-color: #fff;
             padding: 20px;
-            border-left: 2px solid blue;
+            overflow-y: auto;
         }
 
         .editor-header input {
             width: 100%;
-            padding: 10px;
+            padding: 20px;
             font-size: 20px;
             margin-bottom: 20px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            border-radius: 5px;
         }
 
         .editor-body {
             width: 100%;
-            height: calc(100vh - 140px);
+            height: calc(100vh - 160px);
             padding: 20px;
             border: 1px solid #ccc;
             overflow-y: auto;
             font-size: 20px;
-            color: #333;
+            line-height: 1.5;
             white-space: pre-wrap;
             word-wrap: break-word;
+            background-color: #fff;
         }
 
-        /* Styling for Blue Paragraph Lines */
         .editor-body p {
             border-left: 4px solid blue;
             padding-left: 10px;
             margin: 10px 0;
         }
+
+        .editor-body hr {
+            border: none;
+            border-top: 2px solid blue;
+            margin: 20px 0;
+        }
+
     </style>
 </head>
 <body>
@@ -85,7 +141,7 @@
             <button id="deleteNotepad">Delete Notepad</button>
             <button id="deleteAllNotepads">Delete All Notepads</button>
             <input type="text" id="searchNotepad" placeholder="Search Notepad">
-            <div id="notepadList"></div>
+            <div id="notepadList" class="notepad-list"></div>
         </div>
         
         <!-- Main Editor Area -->
