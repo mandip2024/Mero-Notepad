@@ -3,257 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fancy Online Notepad</title>
+    <title>Fancy Notepad</title>
     <style>
-        /* Global Styles */
-        body, html {
+        * {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: white;
-            height: 100%;
+            box-sizing: border-box;
         }
 
-        /* Main container */
-        .container {
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+        }
+
+        #container {
             display: flex;
+            width: 100vw;
             height: 100vh;
         }
 
-        /* Left sidebar */
-        .sidebar {
+        #left-panel {
             width: 30%;
-            background-color: #f0f4f7;
+            background-color: #f0f0f0;
             padding: 20px;
-            box-sizing: border-box;
             border-right: 3px solid blue;
+            display: flex;
+            flex-direction: column;
         }
 
-        .sidebar button {
-            width: 100%;
-            padding: 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
+        #left-panel button,
+        #left-panel input {
             margin-bottom: 10px;
+            padding: 10px;
             font-size: 16px;
+            background-color: white;
+            border: 2px solid blue;
             cursor: pointer;
         }
 
-        .sidebar button:hover {
-            background-color: #0056b3;
+        #left-panel button:hover,
+        #left-panel input:focus {
+            background-color: #e0e0e0;
         }
 
-        /* Main content area */
-        .notepad {
-            width: 70%;
-            padding: 20px;
-            box-sizing: border-box;
-            overflow-y: auto;
-            background-color: white;
-        }
-
-        /* Text area styling */
-        .text-area {
-            width: 100%;
-            height: 90vh;
-            font-size: 20px;
-            line-height: 1.6;
-            border: none;
-            outline: none;
-            background-color: white;
-            color: black;
-            overflow-y: auto;
-        }
-
-        /* Blue paragraph line */
-        .paragraph {
-            border-left: 4px solid blue;
-            padding-left: 10px;
+        #left-panel input {
             margin-bottom: 20px;
         }
 
-        .note-title {
+        #right-panel {
+            width: 70%;
+            padding: 20px;
+            position: relative;
+        }
+
+        #notepadText {
             width: 100%;
-            padding: 10px;
-            font-size: 22px;
-            font-weight: bold;
+            height: 100%;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
             border: none;
             outline: none;
-            background-color: #f0f4f7;
+            background-color: white;
+            resize: none;
+            line-height: 1.6;
+            padding-left: 10px;
+        }
+
+        #noteTitle {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
             color: black;
+            border-bottom: 2px solid blue;
+            padding-bottom: 10px;
         }
 
-        /* Horizontal lines */
-        .horizontal-line {
-            border-top: 2px solid blue;
-            margin-top: 10px;
+        textarea:focus {
+            outline: none;
         }
 
-        /* Note list */
-        .note-list {
-            padding: 0;
-            list-style-type: none;
+        #noteTitle::before {
+            content: 'Untitled Note';
         }
 
-        .note-list li {
+        #notepadText p {
+            border-left: 4px solid blue;
+            padding-left: 10px;
+        }
+
+        #notesList {
+            list-style: none;
+            padding-left: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        #notesList li {
             padding: 10px;
-            border-bottom: 1px solid #ccc;
+            background-color: #f5f5f5;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
             cursor: pointer;
         }
 
-        .note-list li:hover {
-            background-color: #007bff;
-            color: white;
+        #notesList li:hover {
+            background-color: #e0e0e0;
         }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <!-- Left Sidebar -->
-    <div class="sidebar">
-        <button id="newNote">New Notepad</button>
-        <button id="deleteNote">Delete Notepad</button>
-        <button id="deleteAllNotes">Delete All Notes</button>
-        <button id="searchNote">Search Notepad</button>
-
-        <h3>Your Notes:</h3>
-        <ul class="note-list" id="noteList"></ul>
+    <div id="container">
+        <!-- Left Panel: 30% -->
+        <div id="left-panel">
+            <button id="newNote">New Notepad</button>
+            <button id="deleteNote">Delete Notepad</button>
+            <button id="deleteAllNotes">Delete All Notepads</button>
+            <input type="text" id="searchNotes" placeholder="Search Notes">
+            <ul id="notesList"></ul>
+        </div>
+        
+        <!-- Right Panel: 70% -->
+        <div id="right-panel">
+            <textarea id="notepadText" placeholder="Start typing your note..." rows="30" cols="100"></textarea>
+            <div id="noteTitle">Untitled</div>
+        </div>
     </div>
 
-    <!-- Right Notepad Area -->
-    <div class="notepad">
-        <input class="note-title" id="noteTitle" placeholder="Title your note..." />
-        <div contenteditable="true" id="textArea" class="text-area"></div>
-    </div>
-</div>
+    <script>
+        // Select Elements
+        const newNoteBtn = document.getElementById("newNote");
+        const deleteNoteBtn = document.getElementById("deleteNote");
+        const deleteAllNotesBtn = document.getElementById("deleteAllNotes");
+        const searchNotesInput = document.getElementById("searchNotes");
+        const notesList = document.getElementById("notesList");
+        const notepadText = document.getElementById("notepadText");
+        const noteTitle = document.getElementById("noteTitle");
 
-<script>
-// LocalStorage Helper Functions
-function saveNoteToStorage(title, content) {
-    let notes = JSON.parse(localStorage.getItem('notes') || '[]');
-    notes.push({ title: title, content: content });
-    localStorage.setItem('notes', JSON.stringify(notes));
-}
+        // Initialize Data
+        let notes = JSON.parse(localStorage.getItem("notes")) || [];
+        let currentNoteIndex = null;
 
-function loadNotesFromStorage() {
-    return JSON.parse(localStorage.getItem('notes') || '[]');
-}
+        // Functions
+        function renderNotesList() {
+            notesList.innerHTML = "";
+            notes.forEach((note, index) => {
+                const li = document.createElement("li");
+                li.textContent = note.title || "Untitled";
+                li.onclick = () => loadNote(index);
+                notesList.appendChild(li);
+            });
+        }
 
-function displayNotes() {
-    const notes = loadNotesFromStorage();
-    const noteList = document.getElementById('noteList');
-    noteList.innerHTML = ''; // Clear the current list
+        function saveNote() {
+            const title = noteTitle.textContent;
+            const text = notepadText.value;
+            
+            if (currentNoteIndex !== null) {
+                notes[currentNoteIndex] = { title, text };
+            } else {
+                notes.push({ title, text });
+                currentNoteIndex = notes.length - 1;
+            }
 
-    notes.forEach((note, index) => {
-        const li = document.createElement('li');
-        li.textContent = note.title || "Untitled";
-        li.onclick = () => loadNoteContent(note, index);
-        noteList.appendChild(li);
-    });
-}
+            localStorage.setItem("notes", JSON.stringify(notes));
+            renderNotesList();
+        }
 
-function loadNoteContent(note, index) {
-    document.getElementById('noteTitle').value = note.title;
-    document.getElementById('textArea').innerHTML = note.content;
-    currentNoteIndex = index;
-}
+        function loadNote(index) {
+            currentNoteIndex = index;
+            const note = notes[index];
+            noteTitle.textContent = note.title;
+            notepadText.value = note.text;
+        }
 
-// Initializing Event Listeners
-document.getElementById('newNote').addEventListener('click', () => {
-    document.getElementById('noteTitle').value = '';
-    document.getElementById('textArea').innerHTML = '';
-    currentNoteIndex = null;
-});
+        function createNewNote() {
+            currentNoteIndex = null;
+            noteTitle.textContent = "Untitled";
+            notepadText.value = "";
+        }
 
-document.getElementById('deleteNote').addEventListener('click', () => {
-    if (currentNoteIndex !== null) {
-        let notes = loadNotesFromStorage();
-        notes.splice(currentNoteIndex, 1);
-        localStorage.setItem('notes', JSON.stringify(notes));
-        displayNotes();
-        document.getElementById('noteTitle').value = '';
-        document.getElementById('textArea').innerHTML = '';
-        currentNoteIndex = null;
-    }
-});
+        function deleteNote() {
+            if (currentNoteIndex !== null) {
+                notes.splice(currentNoteIndex, 1);
+                localStorage.setItem("notes", JSON.stringify(notes));
+                currentNoteIndex = null;
+                renderNotesList();
+                notepadText.value = "";
+                noteTitle.textContent = "Untitled";
+            }
+        }
 
-document.getElementById('deleteAllNotes').addEventListener('click', () => {
-    localStorage.removeItem('notes');
-    displayNotes();
-});
+        function deleteAllNotes() {
+            notes = [];
+            localStorage.setItem("notes", JSON.stringify(notes));
+            renderNotesList();
+            notepadText.value = "";
+            noteTitle.textContent = "Untitled";
+        }
 
-document.getElementById('searchNote').addEventListener('click', () => {
-    const searchTerm = prompt('Search notes:');
-    if (searchTerm) {
-        const notes = loadNotesFromStorage();
-        const filteredNotes = notes.filter(note => note.title.includes(searchTerm) || note.content.includes(searchTerm));
-        alert(`Found ${filteredNotes.length} notes matching your search.`);
-    }
-});
+        // Event Listeners
+        newNoteBtn.addEventListener("click", createNewNote);
+        deleteNoteBtn.addEventListener("click", deleteNote);
+        deleteAllNotesBtn.addEventListener("click", deleteAllNotes);
 
-// Automatically saving the note whenever content is changed
-let currentNoteIndex = null;
-const textArea = document.getElementById('textArea');
-const noteTitle = document.getElementById('noteTitle');
+        // Watch for changes in the notepad
+        notepadText.addEventListener("input", () => {
+            noteTitle.textContent = notepadText.value.split("\n")[0] || "Untitled";
+            saveNote();
+        });
 
-textArea.addEventListener('input', () => {
-    const content = textArea.innerHTML;
-    const title = noteTitle.value || 'Untitled';
+        // Search Notes functionality
+        searchNotesInput.addEventListener("input", () => {
+            const searchTerm = searchNotesInput.value.toLowerCase();
+            notesList.innerHTML = "";
+            notes.forEach((note, index) => {
+                if (note.title.toLowerCase().includes(searchTerm)) {
+                    const li = document.createElement("li");
+                    li.textContent = note.title || "Untitled";
+                    li.onclick = () => loadNote(index);
+                    notesList.appendChild(li);
+                }
+            });
+        });
 
-    if (currentNoteIndex !== null) {
-        let notes = loadNotesFromStorage();
-        notes[currentNoteIndex] = { title: title, content: content };
-        localStorage.setItem('notes', JSON.stringify(notes));
-    } else {
-        saveNoteToStorage(title, content);
-        displayNotes();
-    }
-});
-
-// Load previously saved notes when the page loads
-window.onload = function() {
-    displayNotes();
-};
-
-// Undo and Redo functionality
-let undoStack = [];
-let redoStack = [];
-
-textArea.addEventListener('keydown', function(event) {
-    if (event.ctrlKey && event.key === 'z') {
-        event.preventDefault();
-        undo();
-    } else if (event.ctrlKey && event.key === 'y') {
-        event.preventDefault();
-        redo();
-    }
-});
-
-function undo() {
-    if (undoStack.length > 0) {
-        const previousState = undoStack.pop();
-        redoStack.push(textArea.innerHTML);
-        textArea.innerHTML = previousState;
-    }
-}
-
-function redo() {
-    if (redoStack.length > 0) {
-        const nextState = redoStack.pop();
-        undoStack.push(textArea.innerHTML);
-        textArea.innerHTML = nextState;
-    }
-}
-
-textArea.addEventListener('input', function() {
-    if (undoStack.length === 10) {
-        undoStack.shift();
-    }
-    undoStack.push(textArea.innerHTML);
-});
-</script>
-
+        // Initial Render
+        renderNotesList();
+    </script>
 </body>
 </html>
