@@ -8,9 +8,9 @@
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
+            margin: 0;
             display: flex;
             height: 100vh;
-            margin: 0;
         }
 
         #app {
@@ -66,6 +66,13 @@
             padding: 10px;
             border: 1px solid #ccc;
             background-color: white;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            background-image: linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+            background-size: 100% 20px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -78,19 +85,26 @@
         </div>
         <div id="noteEditor">
             <textarea id="editor" placeholder="Write your note here..."></textarea>
-            <button id="saveNote">Save Note</button>
         </div>
     </div>
 
     <script>
         const notesList = document.getElementById("notes");
         const editor = document.getElementById("editor");
-        const saveNoteButton = document.getElementById("saveNote");
         const clearAllButton = document.getElementById("clearAll");
 
         let notes = JSON.parse(localStorage.getItem("notes")) || [];
         let undoStack = [];
         let redoStack = [];
+
+        // Auto-save to local storage
+        editor.addEventListener("input", function() {
+            const noteContent = editor.value.trim();
+            if (noteContent) {
+                notes[0] = noteContent; // Store the first (and only) note
+                saveNotesToLocalStorage();
+            }
+        });
 
         function saveNotesToLocalStorage() {
             localStorage.setItem("notes", JSON.stringify(notes));
@@ -102,77 +116,11 @@
                 const li = document.createElement("li");
                 li.innerHTML = `
                     <span>${note}</span>
-                    <button onclick="editNote(${index})">Edit</button>
-                    <button onclick="deleteNote(${index})">Delete</button>
-                    <button onclick="moveNoteUp(${index})">Move Up</button>
-                    <button onclick="moveNoteDown(${index})">Move Down</button>
+                    <button onclick="editNote()">Edit</button>
+                    <button onclick="clearAllNotes()">Clear All</button>
                 `;
                 notesList.appendChild(li);
             });
-        }
-
-        function createNewNote() {
-            const newNote = editor.value.trim();
-            if (newNote) {
-                notes.push(newNote);
-                saveNotesToLocalStorage();
-                editor.value = "";
-                renderNotes();
-            }
-        }
-
-        function deleteNote(index) {
-            const deletedNote = notes.splice(index, 1)[0];
-            undoStack.push({ action: "delete", note: deletedNote, index });
-            if (undoStack.length > 5) undoStack.shift(); // Keep last 5 actions
-            saveNotesToLocalStorage();
-            renderNotes();
-        }
-
-        function editNote(index) {
-            editor.value = notes[index];
-            deleteNote(index); // Deleting to avoid duplicates and let user edit.
-        }
-
-        function moveNoteUp(index) {
-            if (index > 0) {
-                const note = notes.splice(index, 1)[0];
-                notes.splice(index - 1, 0, note);
-                saveNotesToLocalStorage();
-                renderNotes();
-            }
-        }
-
-        function moveNoteDown(index) {
-            if (index < notes.length - 1) {
-                const note = notes.splice(index, 1)[0];
-                notes.splice(index + 1, 0, note);
-                saveNotesToLocalStorage();
-                renderNotes();
-            }
-        }
-
-        function undoLastAction() {
-            if (undoStack.length > 0) {
-                const lastAction = undoStack.pop();
-                if (lastAction.action === "delete") {
-                    notes.splice(lastAction.index, 0, lastAction.note);
-                    redoStack.push(lastAction);
-                }
-                saveNotesToLocalStorage();
-                renderNotes();
-            }
-        }
-
-        function redoLastAction() {
-            if (redoStack.length > 0) {
-                const lastRedoAction = redoStack.pop();
-                if (lastRedoAction.action === "delete") {
-                    notes.splice(lastRedoAction.index, 1);
-                }
-                saveNotesToLocalStorage();
-                renderNotes();
-            }
         }
 
         function clearAllNotes() {
@@ -181,34 +129,67 @@
             renderNotes();
         }
 
-        saveNoteButton.addEventListener("click", createNewNote);
-        clearAllButton.addEventListener("click", clearAllNotes);
+        // Undo functionality
+        function undoLastAction() {
+            if (undoStack.length > 0) {
+                const lastAction = undoStack.pop();
+                notes[0] = lastAction;
+                redoStack.push(lastAction);
+                saveNotesToLocalStorage();
+                renderNotes();
+                editor.value = notes[0];
+            }
+        }
 
-        // Implement Keyboard Shortcuts
+        // Redo functionality
+        function redoLastAction() {
+            if (redoStack.length > 0) {
+                const lastRedoAction = redoStack.pop();
+                notes[0] = lastRedoAction;
+                saveNotesToLocalStorage();
+                renderNotes();
+                editor.value = notes[0];
+            }
+        }
+
+        // Handle keyboard shortcuts
         document.addEventListener("keydown", (e) => {
-            if (e.ctrlKey && e.key === "n") {
-                e.preventDefault();
-                createNewNote();
-            }
-            if (e.ctrlKey && e.key === "a") {
-                e.preventDefault();
-                editor.select();
-            }
-            if (e.ctrlKey && e.key === "c") {
-                e.preventDefault();
-                document.execCommand("copy");
-            }
-            if (e.ctrlKey && e.key === "v") {
-                e.preventDefault();
-                document.execCommand("paste");
-            }
             if (e.ctrlKey && e.key === "z") {
                 e.preventDefault();
                 undoLastAction();
             }
-            if (e.ctrlKey && e.shiftKey && e.key === "z") {
+
+            if (e.ctrlKey && e.key === "y") {
                 e.preventDefault();
                 redoLastAction();
+            }
+
+            if (e.ctrlKey && e.key === "c") {
+                e.preventDefault();
+                document.execCommand("copy");
+            }
+
+            if (e.ctrlKey && e.key === "v") {
+                e.preventDefault();
+                document.execCommand("paste");
+            }
+
+            if (e.ctrlKey && e.key === "x") {
+                e.preventDefault();
+                document.execCommand("cut");
+            }
+
+            if (e.ctrlKey && e.key === "a") {
+                e.preventDefault();
+                editor.select();
+            }
+
+            if (e.ctrlKey && e.key === "n") {
+                e.preventDefault();
+                editor.value = ""; // New note
+                notes = [];
+                saveNotesToLocalStorage();
+                renderNotes();
             }
         });
 
