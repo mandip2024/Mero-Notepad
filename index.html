@@ -1,237 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Notepad</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            display: flex;
-            height: 100vh;
-        }
-
-        #app {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
-
-        #noteList {
-            width: 20%;
-            background-color: white;
-            padding: 10px;
-            border-right: 1px solid #ccc;
-        }
-
-        #noteList h3 {
-            margin-top: 0;
-        }
-
-        #notes {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        #notes li {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        button {
-            padding: 8px;
-            margin-top: 10px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        #noteEditor {
-            width: 80%;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #editor {
-            width: 100%;
-            height: 80%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: white;
-            font-size: 20px;
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            background-image: linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
-            background-size: 100% 20px;
-            overflow-y: auto;
-        }
-
-        #newNoteBtn {
-            background-color: #28a745;
-            color: white;
-            margin-bottom: 10px;
-        }
-
-        #newNoteBtn:hover {
-            background-color: #218838;
-        }
-
-        .noteControls button {
-            margin-left: 5px;
-            background-color: #dc3545;
-        }
-
-        .noteControls button:hover {
-            background-color: #c82333;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Notepad</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEJrJ10K3R8-2+g5gC2Y-NTXb3lG8mxRcz5k7j+aDWd9lg6V6aW70uydjj2Ne" crossorigin="anonymous">
+  <style>
+    body {
+      background-color: #f0f0f0;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    .left-panel {
+      width: 25%;
+      background-color: #fff;
+      border-right: 1px solid #ddd;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    .right-panel {
+      width: 75%;
+      background-color: white;
+      padding: 20px;
+      border-left: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .note {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px 0;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .note:hover {
+      background-color: #f9f9f9;
+    }
+    .note.active {
+      background-color: #e3f2fd;
+    }
+    textarea {
+      width: 100%;
+      height: 100%;
+      resize: none;
+      border: none;
+      background-color: #f9f9f9;
+      outline: none;
+    }
+  </style>
 </head>
 <body>
-    <div id="app">
-        <div id="noteList">
-            <h3>All Notes</h3>
-            <button id="newNoteBtn">New Note</button>
-            <ul id="notes"></ul>
-            <button id="clearAll">Clear All Notes</button>
-        </div>
-        <div id="noteEditor">
-            <textarea id="editor" placeholder="Write your note here..."></textarea>
-        </div>
+  <div class="container">
+    <!-- Left Panel -->
+    <div class="left-panel">
+      <h4>All Notes</h4>
+      <div id="notesList"></div>
     </div>
+    <!-- Right Panel -->
+    <div class="right-panel">
+      <h4 id="noteTitle">New Note</h4>
+      <textarea id="noteContent" placeholder="Write your note here..."></textarea>
+      <button id="saveNote" class="btn btn-primary mt-3">Save Note</button>
+    </div>
+  </div>
 
-    <script>
-        const notesList = document.getElementById("notes");
-        const editor = document.getElementById("editor");
-        const clearAllButton = document.getElementById("clearAll");
-        const newNoteButton = document.getElementById("newNoteBtn");
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let notes = [];
+    let activeNoteIndex = null;
+    let undoStack = [];
+    let redoStack = [];
 
-        let notes = JSON.parse(localStorage.getItem("notes")) || [];
-        let currentNoteIndex = 0;
+    const notesList = document.getElementById("notesList");
+    const noteContent = document.getElementById("noteContent");
+    const noteTitle = document.getElementById("noteTitle");
+    const saveNoteButton = document.getElementById("saveNote");
 
-        // Auto-save functionality
-        editor.addEventListener("input", function() {
-            const noteContent = editor.value.trim();
-            if (noteContent) {
-                notes[currentNoteIndex] = noteContent; // Update current note
-                saveNotesToLocalStorage();
-            }
-        });
+    // Function to render all notes
+    function renderNotes() {
+      notesList.innerHTML = '';
+      notes.forEach((note, index) => {
+        const noteElement = document.createElement("div");
+        noteElement.className = "note";
+        noteElement.innerText = note.title || `Untitled Note ${index + 1}`;
+        noteElement.onclick = () => loadNote(index);
+        notesList.appendChild(noteElement);
+      });
+    }
 
-        function saveNotesToLocalStorage() {
-            localStorage.setItem("notes", JSON.stringify(notes));
+    // Function to load the selected note
+    function loadNote(index) {
+      activeNoteIndex = index;
+      noteTitle.innerText = notes[index].title || `Untitled Note ${index + 1}`;
+      noteContent.value = notes[index].content;
+      document.querySelectorAll('.note').forEach(el => el.classList.remove('active'));
+      document.getElementsByClassName('note')[index].classList.add('active');
+    }
+
+    // Function to create or update a note
+    function saveNote() {
+      if (activeNoteIndex !== null) {
+        notes[activeNoteIndex].content = noteContent.value;
+        notes[activeNoteIndex].title = noteTitle.innerText;
+      } else {
+        const newNote = {
+          title: `New Note ${notes.length + 1}`,
+          content: noteContent.value
+        };
+        notes.push(newNote);
+        activeNoteIndex = notes.length - 1;
+      }
+      undoStack.push({ action: 'save', index: activeNoteIndex, note: { ...notes[activeNoteIndex] } });
+      renderNotes();
+      loadNote(activeNoteIndex);
+      autoSave();
+    }
+
+    // Function to delete all notes
+    function deleteAllNotes() {
+      if (confirm("Are you sure you want to delete all notes?")) {
+        notes = [];
+        activeNoteIndex = null;
+        renderNotes();
+        noteContent.value = '';
+        noteTitle.innerText = 'New Note';
+      }
+    }
+
+    // Function to delete the selected note
+    function deleteNote() {
+      if (activeNoteIndex !== null && confirm("Are you sure you want to delete this note?")) {
+        notes.splice(activeNoteIndex, 1);
+        activeNoteIndex = null;
+        renderNotes();
+        noteContent.value = '';
+        noteTitle.innerText = 'New Note';
+      }
+    }
+
+    // Function to undo the last action
+    function undo() {
+      if (undoStack.length > 0) {
+        const lastAction = undoStack.pop();
+        if (lastAction.action === 'save') {
+          const note = notes[lastAction.index];
+          redoStack.push({ action: 'save', index: lastAction.index, note: { ...note } });
+          notes[lastAction.index] = lastAction.note;
+          renderNotes();
+          loadNote(lastAction.index);
         }
+      }
+    }
 
-        function renderNotes() {
-            notesList.innerHTML = "";
-            notes.forEach((note, index) => {
-                const li = document.createElement("li");
-                li.innerHTML = `
-                    <span>${note}</span>
-                    <div class="noteControls">
-                        <button onclick="editNote(${index})">Edit</button>
-                        <button onclick="deleteNote(${index})">Delete</button>
-                        <button onclick="moveNoteUp(${index})">Move Up</button>
-                        <button onclick="moveNoteDown(${index})">Move Down</button>
-                    </div>
-                `;
-                notesList.appendChild(li);
-            });
+    // Function to redo the last undone action
+    function redo() {
+      if (redoStack.length > 0) {
+        const lastAction = redoStack.pop();
+        if (lastAction.action === 'save') {
+          notes[lastAction.index] = lastAction.note;
+          undoStack.push({ action: 'save', index: lastAction.index, note: { ...lastAction.note } });
+          renderNotes();
+          loadNote(lastAction.index);
         }
+      }
+    }
 
-        function editNote(index) {
-            currentNoteIndex = index;
-            editor.value = notes[index];
+    // Auto save functionality
+    function autoSave() {
+      localStorage.setItem("notes", JSON.stringify(notes));
+    }
+
+    // Load notes from local storage on page load
+    window.onload = function() {
+      const savedNotes = JSON.parse(localStorage.getItem("notes"));
+      if (savedNotes) {
+        notes = savedNotes;
+        renderNotes();
+      }
+    };
+
+    // Event listeners for keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey) {
+        if (e.key === 'n') {
+          saveNote();
+        } else if (e.key === 's') {
+          saveNote();
+        } else if (e.key === 'z') {
+          undo();
+        } else if (e.key === 'y') {
+          redo();
+        } else if (e.key === 'a') {
+          noteContent.select();
+        } else if (e.key === 'c') {
+          document.execCommand('copy');
+        } else if (e.key === 'v') {
+          document.execCommand('paste');
         }
+      }
+    });
 
-        function deleteNote(index) {
-            const deletedNote = notes.splice(index, 1)[0];
-            saveNotesToLocalStorage();
-            renderNotes();
-            editor.value = ''; // Clear editor
-        }
+    saveNoteButton.addEventListener('click', saveNote);
 
-        function moveNoteUp(index) {
-            if (index > 0) {
-                const note = notes.splice(index, 1)[0];
-                notes.splice(index - 1, 0, note);
-                saveNotesToLocalStorage();
-                renderNotes();
-            }
-        }
+    // Add CRUD functionality buttons for deleting all and selected note
+    const deleteAllButton = document.createElement("button");
+    deleteAllButton.classList.add("btn", "btn-danger", "mt-3");
+    deleteAllButton.innerText = "Delete All Notes";
+    deleteAllButton.onclick = deleteAllNotes;
 
-        function moveNoteDown(index) {
-            if (index < notes.length - 1) {
-                const note = notes.splice(index, 1)[0];
-                notes.splice(index + 1, 0, note);
-                saveNotesToLocalStorage();
-                renderNotes();
-            }
-        }
+    const deleteNoteButton = document.createElement("button");
+    deleteNoteButton.classList.add("btn", "btn-danger", "mt-3");
+    deleteNoteButton.innerText = "Delete Selected Note";
+    deleteNoteButton.onclick = deleteNote;
 
-        function clearAllNotes() {
-            notes = [];
-            saveNotesToLocalStorage();
-            renderNotes();
-            editor.value = ''; // Clear editor
-        }
+    document.body.append(deleteAllButton, deleteNoteButton);
 
-        function createNewNote() {
-            currentNoteIndex = notes.length;
-            notes.push('');
-            saveNotesToLocalStorage();
-            renderNotes();
-            editor.value = ''; // Clear editor for new note
-        }
-
-        // Keyboard Shortcuts
-        document.addEventListener("keydown", (e) => {
-            if (e.ctrlKey && e.key === "n") {
-                e.preventDefault();
-                createNewNote(); // Ctrl + N -> New Note
-            }
-            if (e.ctrlKey && e.key === "a") {
-                e.preventDefault();
-                editor.select(); // Ctrl + A -> Select All
-            }
-            if (e.ctrlKey && e.key === "c") {
-                e.preventDefault();
-                document.execCommand("copy"); // Ctrl + C -> Copy
-            }
-            if (e.ctrlKey && e.key === "x") {
-                e.preventDefault();
-                document.execCommand("cut"); // Ctrl + X -> Cut
-            }
-            if (e.ctrlKey && e.key === "v") {
-                e.preventDefault();
-                document.execCommand("paste"); // Ctrl + V -> Paste
-            }
-            if (e.ctrlKey && e.key === "z") {
-                e.preventDefault();
-                // Undo functionality can be handled manually using a stack
-                // (Not yet implemented in this example)
-            }
-            if (e.ctrlKey && e.key === "y") {
-                e.preventDefault();
-                // Redo functionality can be handled manually using a stack
-                // (Not yet implemented in this example)
-            }
-        });
-
-        newNoteButton.addEventListener("click", createNewNote);
-        clearAllButton.addEventListener("click", clearAllNotes);
-
-        renderNotes(); // Initial render
-    </script>
+    renderNotes();
+  </script>
 </body>
 </html>
