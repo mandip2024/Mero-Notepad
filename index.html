@@ -10,9 +10,9 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
             margin: 0;
             padding: 0;
-            background-color: #f4f6f9;
         }
 
         .container {
@@ -20,6 +20,7 @@
             height: 100vh;
         }
 
+        /* Left Panel (Note list and actions) */
         #left-panel {
             width: 30%;
             background-color: white;
@@ -27,7 +28,6 @@
             border-right: 2px solid #e0e0e0;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
         }
 
         #left-panel .btn {
@@ -59,6 +59,7 @@
             background-color: #f0f0f0;
         }
 
+        /* Right Panel (Note editing) */
         #right-panel {
             width: 70%;
             background-color: white;
@@ -89,11 +90,14 @@
             line-height: 1.6;
             border-left: 2px solid #2196F3;
             border-top: 2px solid #2196F3;
+            box-sizing: border-box;
+            white-space: pre-wrap;
         }
 
-        .line {
-            border-bottom: 1px solid #000;
+        #note-body p {
             margin: 10px 0;
+            padding-left: 10px;
+            border-left: 3px solid black;
         }
 
         #search-bar {
@@ -103,26 +107,20 @@
             border-radius: 5px;
         }
 
+        /* Button section at the bottom of the left panel */
         .action-btns {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
         }
 
         .action-btns button {
-            padding: 10px 15px;
+            width: 100%;
+            padding: 10px;
             font-size: 16px;
+            margin-top: 5px;
         }
 
-        /* Blue line effect for notepad */
-        #note-body {
-            background: #f9f9f9;
-            border: 1px solid #ccc;
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
-        }
     </style>
 </head>
 
@@ -134,31 +132,25 @@
             <button id="new-note-btn" class="btn btn-primary">New Note</button>
             <input id="search-bar" type="text" placeholder="Search Notes..." />
             <ul id="note-list"></ul>
-            <button id="delete-note-btn" class="btn btn-danger">Delete Note</button>
-            <button id="delete-all-btn" class="btn btn-danger">Delete All Notes</button>
-            <button id="undo-btn" class="btn btn-secondary">Undo</button>
-            <button id="redo-btn" class="btn btn-secondary">Redo</button>
+            <div class="action-btns">
+                <button id="delete-note-btn" class="btn btn-danger">Delete Note</button>
+                <button id="delete-all-btn" class="btn btn-danger">Delete All Notes</button>
+                <button id="undo-btn" class="btn btn-secondary">Undo</button>
+                <button id="redo-btn" class="btn btn-secondary">Redo</button>
+            </div>
         </div>
 
         <!-- Right Panel (Note editing) -->
         <div id="right-panel">
             <input id="note-title" type="text" placeholder="Untitled" />
-            <textarea id="note-body" placeholder="Start typing your note..."></textarea>
+            <div id="note-body" contenteditable="true" placeholder="Start typing your note..."></div>
         </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="action-btns">
-        <button id="copy-btn" class="btn btn-warning">Copy</button>
-        <button id="cut-btn" class="btn btn-warning">Cut</button>
-        <button id="paste-btn" class="btn btn-warning">Paste</button>
-        <button id="select-all-btn" class="btn btn-info">Select All</button>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
+        // Elements
         const noteList = document.getElementById("note-list");
         const noteTitle = document.getElementById("note-title");
         const noteBody = document.getElementById("note-body");
@@ -168,22 +160,19 @@
         const undoBtn = document.getElementById("undo-btn");
         const redoBtn = document.getElementById("redo-btn");
         const searchBar = document.getElementById("search-bar");
-        const copyBtn = document.getElementById("copy-btn");
-        const cutBtn = document.getElementById("cut-btn");
-        const pasteBtn = document.getElementById("paste-btn");
-        const selectAllBtn = document.getElementById("select-all-btn");
 
+        // State variables
         let notes = JSON.parse(localStorage.getItem('notes')) || [];
         let currentNoteIndex = -1;
         let undoStack = [];
         let redoStack = [];
 
-        // Save notes to localStorage
+        // Save the notes to localStorage
         function saveNotes() {
             localStorage.setItem('notes', JSON.stringify(notes));
         }
 
-        // Render notes list
+        // Render the list of notes
         function renderNotes() {
             noteList.innerHTML = "";
             notes.forEach((note, index) => {
@@ -194,11 +183,11 @@
             });
         }
 
-        // Load note into the editor
+        // Load the note into the editor
         function loadNote(index) {
             const note = notes[index];
             noteTitle.value = note.title;
-            noteBody.value = note.body;
+            noteBody.innerHTML = note.body;
             currentNoteIndex = index;
         }
 
@@ -230,42 +219,43 @@
             }
         };
 
-        // Undo last action
+        // Undo the last action
         undoBtn.onclick = () => {
             if (undoStack.length > 0) {
-                redoStack.push({ title: noteTitle.value, body: noteBody.value });
+                redoStack.push({ title: noteTitle.value, body: noteBody.innerHTML });
                 const prevState = undoStack.pop();
                 noteTitle.value = prevState.title;
-                noteBody.value = prevState.body;
+                noteBody.innerHTML = prevState.body;
             }
         };
 
-        // Redo last undone action
+        // Redo the last undone action
         redoBtn.onclick = () => {
             if (redoStack.length > 0) {
-                undoStack.push({ title: noteTitle.value, body: noteBody.value });
+                undoStack.push({ title: noteTitle.value, body: noteBody.innerHTML });
                 const nextState = redoStack.pop();
                 noteTitle.value = nextState.title;
-                noteBody.value = nextState.body;
+                noteBody.innerHTML = nextState.body;
             }
         };
 
-        // Save the current state for undo functionality
+        // Save the state for undo/redo
         function saveState() {
-            if (undoStack.length >= 10) undoStack.shift(); // Limit undo stack size
-            undoStack.push({ title: noteTitle.value, body: noteBody.value });
-            redoStack = []; // Clear redo stack after new change
+            if (undoStack.length >= 10) undoStack.shift(); // Limit undo stack to 10 actions
+            undoStack.push({ title: noteTitle.value, body: noteBody.innerHTML });
+            redoStack = []; // Clear redo stack after new action
         }
 
+        // Detect changes in the note and save the state
         noteTitle.oninput = noteBody.oninput = () => {
             const currentNote = notes[currentNoteIndex];
             saveState();
             currentNote.title = noteTitle.value;
-            currentNote.body = noteBody.value;
+            currentNote.body = noteBody.innerHTML;
             saveNotes();
         };
 
-        // Search functionality
+        // Search function
         searchBar.oninput = () => {
             const searchTerm = searchBar.value.toLowerCase();
             const filteredNotes = notes.filter(note =>
@@ -280,32 +270,10 @@
             });
         };
 
-        // Copy functionality
-        copyBtn.onclick = () => {
-            noteBody.select();
-            document.execCommand('copy');
-        };
-
-        // Cut functionality
-        cutBtn.onclick = () => {
-            noteBody.select();
-            document.execCommand('cut');
-        };
-
-        // Paste functionality
-        pasteBtn.onclick = () => {
-            noteBody.focus();
-            document.execCommand('paste');
-        };
-
-        // Select All functionality
-        selectAllBtn.onclick = () => {
-            noteBody.select();
-        };
-
         // Initialize
         renderNotes();
         if (notes.length > 0) loadNote(0);
+
     </script>
 
 </body>
