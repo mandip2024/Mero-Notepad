@@ -58,6 +58,8 @@
         #noteEditor {
             width: 80%;
             padding: 10px;
+            display: flex;
+            flex-direction: column;
         }
 
         #editor {
@@ -74,12 +76,32 @@
             background-size: 100% 20px;
             overflow-y: auto;
         }
+
+        #newNoteBtn {
+            background-color: #28a745;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        #newNoteBtn:hover {
+            background-color: #218838;
+        }
+
+        .noteControls button {
+            margin-left: 5px;
+            background-color: #dc3545;
+        }
+
+        .noteControls button:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="noteList">
             <h3>All Notes</h3>
+            <button id="newNoteBtn">New Note</button>
             <ul id="notes"></ul>
             <button id="clearAll">Clear All Notes</button>
         </div>
@@ -92,16 +114,16 @@
         const notesList = document.getElementById("notes");
         const editor = document.getElementById("editor");
         const clearAllButton = document.getElementById("clearAll");
+        const newNoteButton = document.getElementById("newNoteBtn");
 
         let notes = JSON.parse(localStorage.getItem("notes")) || [];
-        let undoStack = [];
-        let redoStack = [];
+        let currentNoteIndex = 0;
 
-        // Auto-save to local storage
+        // Auto-save functionality
         editor.addEventListener("input", function() {
             const noteContent = editor.value.trim();
             if (noteContent) {
-                notes[0] = noteContent; // Store the first (and only) note
+                notes[currentNoteIndex] = noteContent; // Update current note
                 saveNotesToLocalStorage();
             }
         });
@@ -116,82 +138,98 @@
                 const li = document.createElement("li");
                 li.innerHTML = `
                     <span>${note}</span>
-                    <button onclick="editNote()">Edit</button>
-                    <button onclick="clearAllNotes()">Clear All</button>
+                    <div class="noteControls">
+                        <button onclick="editNote(${index})">Edit</button>
+                        <button onclick="deleteNote(${index})">Delete</button>
+                        <button onclick="moveNoteUp(${index})">Move Up</button>
+                        <button onclick="moveNoteDown(${index})">Move Down</button>
+                    </div>
                 `;
                 notesList.appendChild(li);
             });
+        }
+
+        function editNote(index) {
+            currentNoteIndex = index;
+            editor.value = notes[index];
+        }
+
+        function deleteNote(index) {
+            const deletedNote = notes.splice(index, 1)[0];
+            saveNotesToLocalStorage();
+            renderNotes();
+            editor.value = ''; // Clear editor
+        }
+
+        function moveNoteUp(index) {
+            if (index > 0) {
+                const note = notes.splice(index, 1)[0];
+                notes.splice(index - 1, 0, note);
+                saveNotesToLocalStorage();
+                renderNotes();
+            }
+        }
+
+        function moveNoteDown(index) {
+            if (index < notes.length - 1) {
+                const note = notes.splice(index, 1)[0];
+                notes.splice(index + 1, 0, note);
+                saveNotesToLocalStorage();
+                renderNotes();
+            }
         }
 
         function clearAllNotes() {
             notes = [];
             saveNotesToLocalStorage();
             renderNotes();
+            editor.value = ''; // Clear editor
         }
 
-        // Undo functionality
-        function undoLastAction() {
-            if (undoStack.length > 0) {
-                const lastAction = undoStack.pop();
-                notes[0] = lastAction;
-                redoStack.push(lastAction);
-                saveNotesToLocalStorage();
-                renderNotes();
-                editor.value = notes[0];
-            }
+        function createNewNote() {
+            currentNoteIndex = notes.length;
+            notes.push('');
+            saveNotesToLocalStorage();
+            renderNotes();
+            editor.value = ''; // Clear editor for new note
         }
 
-        // Redo functionality
-        function redoLastAction() {
-            if (redoStack.length > 0) {
-                const lastRedoAction = redoStack.pop();
-                notes[0] = lastRedoAction;
-                saveNotesToLocalStorage();
-                renderNotes();
-                editor.value = notes[0];
-            }
-        }
-
-        // Handle keyboard shortcuts
+        // Keyboard Shortcuts
         document.addEventListener("keydown", (e) => {
-            if (e.ctrlKey && e.key === "z") {
-                e.preventDefault();
-                undoLastAction();
-            }
-
-            if (e.ctrlKey && e.key === "y") {
-                e.preventDefault();
-                redoLastAction();
-            }
-
-            if (e.ctrlKey && e.key === "c") {
-                e.preventDefault();
-                document.execCommand("copy");
-            }
-
-            if (e.ctrlKey && e.key === "v") {
-                e.preventDefault();
-                document.execCommand("paste");
-            }
-
-            if (e.ctrlKey && e.key === "x") {
-                e.preventDefault();
-                document.execCommand("cut");
-            }
-
-            if (e.ctrlKey && e.key === "a") {
-                e.preventDefault();
-                editor.select();
-            }
-
             if (e.ctrlKey && e.key === "n") {
                 e.preventDefault();
-                editor.value = ""; // New note
-                notes = [];
-                saveNotesToLocalStorage();
-                renderNotes();
+                createNewNote(); // Ctrl + N -> New Note
+            }
+            if (e.ctrlKey && e.key === "a") {
+                e.preventDefault();
+                editor.select(); // Ctrl + A -> Select All
+            }
+            if (e.ctrlKey && e.key === "c") {
+                e.preventDefault();
+                document.execCommand("copy"); // Ctrl + C -> Copy
+            }
+            if (e.ctrlKey && e.key === "x") {
+                e.preventDefault();
+                document.execCommand("cut"); // Ctrl + X -> Cut
+            }
+            if (e.ctrlKey && e.key === "v") {
+                e.preventDefault();
+                document.execCommand("paste"); // Ctrl + V -> Paste
+            }
+            if (e.ctrlKey && e.key === "z") {
+                e.preventDefault();
+                // Undo functionality can be handled manually using a stack
+                // (Not yet implemented in this example)
+            }
+            if (e.ctrlKey && e.key === "y") {
+                e.preventDefault();
+                // Redo functionality can be handled manually using a stack
+                // (Not yet implemented in this example)
             }
         });
+
+        newNoteButton.addEventListener("click", createNewNote);
+        clearAllButton.addEventListener("click", clearAllNotes);
 
         renderNotes(); // Initial render
     </script>
