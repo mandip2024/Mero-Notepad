@@ -3,277 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fancy Notepad</title>
+    <title>Fancy Online Notepad</title>
     <style>
-        /* General Styling */
-        * {
+        /* Global Styles */
+        body, html {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-        body {
             font-family: Arial, sans-serif;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #fff;
-            overflow: hidden;
+            background-color: white;
+            height: 100%;
         }
 
+        /* Main container */
         .container {
             display: flex;
-            width: 1920px;
-            height: 1080px;
+            height: 100vh;
         }
 
-        /* Sidebar Styling */
+        /* Left sidebar */
         .sidebar {
             width: 30%;
-            background-color: #f4f4f4;
+            background-color: #f0f4f7;
             padding: 20px;
-            overflow-y: auto;
-            border-right: 2px solid blue;
+            box-sizing: border-box;
+            border-right: 3px solid blue;
         }
 
-        .sidebar h2 {
-            text-align: center;
-            font-size: 24px;
-            margin-bottom: 30px;
-        }
-
-        .sidebar button, .sidebar input {
-            display: block;
+        .sidebar button {
             width: 100%;
-            margin-bottom: 15px;
-            padding: 12px;
-            font-size: 20px;
+            padding: 15px;
             background-color: #007bff;
             color: white;
             border: none;
+            margin-bottom: 10px;
+            font-size: 16px;
             cursor: pointer;
-            border-radius: 5px;
-            text-align: center;
         }
 
         .sidebar button:hover {
             background-color: #0056b3;
         }
 
-        .sidebar input {
-            padding: 12px;
-            font-size: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        /* Main content area */
+        .notepad {
+            width: 70%;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
             background-color: white;
         }
 
-        .sidebar input:focus {
+        /* Text area styling */
+        .text-area {
+            width: 100%;
+            height: 90vh;
+            font-size: 20px;
+            line-height: 1.6;
+            border: none;
             outline: none;
-            border-color: #007bff;
+            background-color: white;
+            color: black;
+            overflow-y: auto;
         }
 
-        .sidebar .notepad-list div {
-            cursor: pointer;
-            margin-bottom: 10px;
-            font-size: 18px;
-            background-color: #e0e0e0;
+        /* Blue paragraph line */
+        .paragraph {
+            border-left: 4px solid blue;
+            padding-left: 10px;
+            margin-bottom: 20px;
+        }
+
+        .note-title {
+            width: 100%;
             padding: 10px;
-            border-radius: 5px;
+            font-size: 22px;
+            font-weight: bold;
+            border: none;
+            outline: none;
+            background-color: #f0f4f7;
+            color: black;
         }
 
-        .sidebar .notepad-list div:hover {
+        /* Horizontal lines */
+        .horizontal-line {
+            border-top: 2px solid blue;
+            margin-top: 10px;
+        }
+
+        /* Note list */
+        .note-list {
+            padding: 0;
+            list-style-type: none;
+        }
+
+        .note-list li {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        .note-list li:hover {
             background-color: #007bff;
             color: white;
         }
-
-        /* Editor Area Styling */
-        .editor {
-            width: 70%;
-            background-color: #fff;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .editor-header input {
-            width: 100%;
-            padding: 20px;
-            font-size: 20px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            background-color: #f9f9f9;
-            border-radius: 5px;
-        }
-
-        .editor-body {
-            width: 100%;
-            height: calc(100vh - 160px);
-            padding: 20px;
-            border: 1px solid #ccc;
-            overflow-y: auto;
-            font-size: 20px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            background-color: #fff;
-        }
-
-        .editor-body p {
-            border-left: 4px solid blue;
-            padding-left: 10px;
-            margin: 10px 0;
-        }
-
-        .editor-body hr {
-            border: none;
-            border-top: 2px solid blue;
-            margin: 20px 0;
-        }
-
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Left Sidebar -->
-        <div class="sidebar">
-            <h2>Notepad Manager</h2>
-            <button id="newNotepad">New Notepad</button>
-            <button id="deleteNotepad">Delete Notepad</button>
-            <button id="deleteAllNotepads">Delete All Notepads</button>
-            <input type="text" id="searchNotepad" placeholder="Search Notepad">
-            <div id="notepadList" class="notepad-list"></div>
-        </div>
-        
-        <!-- Main Editor Area -->
-        <div class="editor">
-            <div class="editor-header">
-                <input type="text" id="notepadTitle" placeholder="Notepad Title">
-            </div>
-            <div id="textArea" contenteditable="true" class="editor-body"></div>
-        </div>
+
+<div class="container">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <button id="newNote">New Notepad</button>
+        <button id="deleteNote">Delete Notepad</button>
+        <button id="deleteAllNotes">Delete All Notes</button>
+        <button id="searchNote">Search Notepad</button>
+
+        <h3>Your Notes:</h3>
+        <ul class="note-list" id="noteList"></ul>
     </div>
-    
-    <script>
-        // Elements
-        const newNotepadButton = document.getElementById('newNotepad');
-        const deleteNotepadButton = document.getElementById('deleteNotepad');
-        const deleteAllButton = document.getElementById('deleteAllNotepads');
-        const searchInput = document.getElementById('searchNotepad');
-        const notepadList = document.getElementById('notepadList');
-        const notepadTitle = document.getElementById('notepadTitle');
-        const textArea = document.getElementById('textArea');
 
-        let currentNotepad = null;
-        let undoStack = [];
-        let redoStack = [];
+    <!-- Right Notepad Area -->
+    <div class="notepad">
+        <input class="note-title" id="noteTitle" placeholder="Title your note..." />
+        <div contenteditable="true" id="textArea" class="text-area"></div>
+    </div>
+</div>
 
-        // Create a new Notepad
-        function createNotepad(title = 'Untitled') {
-            currentNotepad = { title, content: '', timestamp: new Date() };
-            updateNotepadList();
-            updateTextArea();
-        }
+<script>
+// LocalStorage Helper Functions
+function saveNoteToStorage(title, content) {
+    let notes = JSON.parse(localStorage.getItem('notes') || '[]');
+    notes.push({ title: title, content: content });
+    localStorage.setItem('notes', JSON.stringify(notes));
+}
 
-        // Update the left panel with saved notepads
-        function updateNotepadList() {
-            const notepads = getSavedNotepads();
-            notepadList.innerHTML = '';
-            notepads.forEach((notepad, index) => {
-                const notepadItem = document.createElement('div');
-                notepadItem.innerText = notepad.title;
-                notepadItem.addEventListener('click', () => loadNotepad(index));
-                notepadList.appendChild(notepadItem);
-            });
-        }
+function loadNotesFromStorage() {
+    return JSON.parse(localStorage.getItem('notes') || '[]');
+}
 
-        // Load a notepad into the editor
-        function loadNotepad(index) {
-            const notepads = getSavedNotepads();
-            currentNotepad = notepads[index];
-            updateTextArea();
-        }
+function displayNotes() {
+    const notes = loadNotesFromStorage();
+    const noteList = document.getElementById('noteList');
+    noteList.innerHTML = ''; // Clear the current list
 
-        // Save the content to localStorage
-        function saveNotepad() {
-            if (currentNotepad) {
-                currentNotepad.content = textArea.innerHTML;
-                localStorage.setItem(currentNotepad.title, JSON.stringify(currentNotepad));
-            }
-        }
+    notes.forEach((note, index) => {
+        const li = document.createElement('li');
+        li.textContent = note.title || "Untitled";
+        li.onclick = () => loadNoteContent(note, index);
+        noteList.appendChild(li);
+    });
+}
 
-        // Update the text area and title input
-        function updateTextArea() {
-            if (currentNotepad) {
-                notepadTitle.value = currentNotepad.title;
-                textArea.innerHTML = currentNotepad.content;
-            }
-        }
+function loadNoteContent(note, index) {
+    document.getElementById('noteTitle').value = note.title;
+    document.getElementById('textArea').innerHTML = note.content;
+    currentNoteIndex = index;
+}
 
-        // Get all saved notepads from localStorage
-        function getSavedNotepads() {
-            const notepads = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                const notepad = JSON.parse(localStorage.getItem(key));
-                notepads.push(notepad);
-            }
-            return notepads;
-        }
+// Initializing Event Listeners
+document.getElementById('newNote').addEventListener('click', () => {
+    document.getElementById('noteTitle').value = '';
+    document.getElementById('textArea').innerHTML = '';
+    currentNoteIndex = null;
+});
 
-        // Delete the selected notepad
-        function deleteNotepad() {
-            if (currentNotepad) {
-                localStorage.removeItem(currentNotepad.title);
-                currentNotepad = null;
-                updateNotepadList();
-                textArea.innerHTML = '';
-                notepadTitle.value = '';
-            }
-        }
+document.getElementById('deleteNote').addEventListener('click', () => {
+    if (currentNoteIndex !== null) {
+        let notes = loadNotesFromStorage();
+        notes.splice(currentNoteIndex, 1);
+        localStorage.setItem('notes', JSON.stringify(notes));
+        displayNotes();
+        document.getElementById('noteTitle').value = '';
+        document.getElementById('textArea').innerHTML = '';
+        currentNoteIndex = null;
+    }
+});
 
-        // Delete all notepads
-        function deleteAllNotepads() {
-            localStorage.clear();
-            updateNotepadList();
-            textArea.innerHTML = '';
-            notepadTitle.value = '';
-        }
+document.getElementById('deleteAllNotes').addEventListener('click', () => {
+    localStorage.removeItem('notes');
+    displayNotes();
+});
 
-        // Search for a notepad
-        function searchNotepad() {
-            const query = searchInput.value.toLowerCase();
-            const notepads = getSavedNotepads();
-            notepadList.innerHTML = '';
-            notepads.forEach((notepad, index) => {
-                if (notepad.title.toLowerCase().includes(query)) {
-                    const notepadItem = document.createElement('div');
-                    notepadItem.innerText = notepad.title;
-                    notepadItem.addEventListener('click', () => loadNotepad(index));
-                    notepadList.appendChild(notepadItem);
-                }
-            });
-        }
+document.getElementById('searchNote').addEventListener('click', () => {
+    const searchTerm = prompt('Search notes:');
+    if (searchTerm) {
+        const notes = loadNotesFromStorage();
+        const filteredNotes = notes.filter(note => note.title.includes(searchTerm) || note.content.includes(searchTerm));
+        alert(`Found ${filteredNotes.length} notes matching your search.`);
+    }
+});
 
-        // Setup Event Listeners
-        newNotepadButton.addEventListener('click', () => createNotepad());
-        deleteNotepadButton.addEventListener('click', deleteNotepad);
-        deleteAllButton.addEventListener('click', deleteAllNotepads);
-        searchInput.addEventListener('input', searchNotepad);
+// Automatically saving the note whenever content is changed
+let currentNoteIndex = null;
+const textArea = document.getElementById('textArea');
+const noteTitle = document.getElementById('noteTitle');
 
-        // Handle Undo/Redo
-        textArea.addEventListener('input', () => {
-            saveNotepad();
-            undoStack.push(textArea.innerHTML);
-            if (undoStack.length > 10) undoStack.shift();
-        });
+textArea.addEventListener('input', () => {
+    const content = textArea.innerHTML;
+    const title = noteTitle.value || 'Untitled';
 
-        // Handle the browser auto-save (use localStorage for persistence)
-        window.addEventListener('beforeunload', () => {
-            saveNotepad();
-        });
+    if (currentNoteIndex !== null) {
+        let notes = loadNotesFromStorage();
+        notes[currentNoteIndex] = { title: title, content: content };
+        localStorage.setItem('notes', JSON.stringify(notes));
+    } else {
+        saveNoteToStorage(title, content);
+        displayNotes();
+    }
+});
 
-        // Initialize with saved notepads
-        updateNotepadList();
-    </script>
+// Load previously saved notes when the page loads
+window.onload = function() {
+    displayNotes();
+};
+
+// Undo and Redo functionality
+let undoStack = [];
+let redoStack = [];
+
+textArea.addEventListener('keydown', function(event) {
+    if (event.ctrlKey && event.key === 'z') {
+        event.preventDefault();
+        undo();
+    } else if (event.ctrlKey && event.key === 'y') {
+        event.preventDefault();
+        redo();
+    }
+});
+
+function undo() {
+    if (undoStack.length > 0) {
+        const previousState = undoStack.pop();
+        redoStack.push(textArea.innerHTML);
+        textArea.innerHTML = previousState;
+    }
+}
+
+function redo() {
+    if (redoStack.length > 0) {
+        const nextState = redoStack.pop();
+        undoStack.push(textArea.innerHTML);
+        textArea.innerHTML = nextState;
+    }
+}
+
+textArea.addEventListener('input', function() {
+    if (undoStack.length === 10) {
+        undoStack.shift();
+    }
+    undoStack.push(textArea.innerHTML);
+});
+</script>
+
 </body>
 </html>
